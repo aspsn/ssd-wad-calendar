@@ -25,6 +25,9 @@ body {
 ._note:hover ._btn-action {
   visibility: visible;
 }
+._day:hover ._btn-add{
+  display: block;
+}
 
 /* === Modal === */
 button.btn-close {

@@ -2,8 +2,6 @@ import MappingDays from "@/components/MappingDays";
 import { months, weekdays } from "@/constants/calendar";
 
 function Home() {
-  // const x = new Date();
-  // const prevMonth = x.setMonth(x.getMonth() - 2);
   const currentDay: Date = new Date();
 
   return (

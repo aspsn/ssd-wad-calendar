@@ -65,132 +65,35 @@ function MappingDays({ day }: { day: Date }) {
     setCurrentDays(tempCurrentDays);
   };
 
-  const addEvent = ({ day }: { day: currentDayInterface }) => {
-    setIsModal(true);
+  const handleOpenModal = ({
+    day,
+    note,
+    typeModal,
+  }: {
+    day: currentDayInterface;
+    note: notesInterface;
+    typeModal: "add" | "edit" | "delete";
+  }) => {
+    let refacTime = note.time.split(" ");
+    refacTime[0] =
+      refacTime[4] === "PM" && parseInt(refacTime[0]) < 12
+        ? (parseInt(refacTime[0]) + 12).toString()
+        : refacTime[4] === "AM" && refacTime[0] === "12"
+        ? "00"
+        : refacTime[0];
+
+    const timeString = `${refacTime[0]}:${refacTime[2]}`;
+
     setDataOnEdit({
       ...(dataOnEdit as dataOnEditInterface),
       day,
-      note: { id: 0, name: "", email: "", color: "", time: "" },
+      note: {
+        ...(note as notesInterface),
+        time: typeModal === "add" ? "12:00" : timeString,
+      },
     });
-    setTypeModal("add");
-  };
-  const editEvent = ({
-    day,
-    note,
-  }: {
-    day: currentDayInterface;
-    note: notesInterface;
-  }) => {
     setIsModal(true);
-    setDataOnEdit({ ...(dataOnEdit as dataOnEditInterface), day, note });
-    setTypeModal("edit");
-  };
-  const deleteEvent = ({
-    day,
-    note,
-  }: {
-    day: currentDayInterface;
-    note: notesInterface;
-  }) => {
-    setIsModal(true);
-    setDataOnEdit({ ...(dataOnEdit as dataOnEditInterface), day, note });
-    setTypeModal("delete");
-  };
-
-  const handleAddEvent = ({
-    day,
-    note,
-  }: {
-    day: currentDayInterface;
-    note: notesInterface;
-  }) => {
-    const [h, m] = note.time.split(":");
-    const hour: number = parseInt(h);
-
-    const payload: notesInterface = {
-      id: new Date().getSeconds(),
-      name: note.name,
-      email: note.email,
-      color: randomColor(),
-      time: `${
-        hour % 12
-          ? `${(hour % 12).toString().length === 1 ? 0 : ""}${hour % 12}`
-          : 12
-      } : ${m}  ${hour >= 12 ? "PM" : "AM"}`,
-    };
-
-    const indexDate: number = currentDays.findIndex((x) => x === day);
-    const addNote: Array<currentDayInterface> = currentDays.map(
-      (date, index) => ({
-        ...date,
-        notes: index === indexDate ? [...date.notes, payload] : date.notes,
-      }),
-    );
-
-    setLocalStorage("data_notes", JSON.stringify(addNote));
-    mappingData();
-    setIsModal(false);
-  };
-
-  const handleEditEvent = ({
-    day,
-    note,
-  }: {
-    day: currentDayInterface;
-    note: notesInterface;
-  }) => {
-    const [h, m] = note.time.split(":");
-    const hour: number = parseInt(h);
-
-    const payload: notesInterface = {
-      id: new Date().getSeconds(),
-      name: note.name,
-      email: note.email,
-      color: randomColor(),
-      time: `${
-        hour % 12
-          ? `${(hour % 12).toString().length === 1 ? 0 : ""}${hour % 12}`
-          : 12
-      } : ${m}  ${hour >= 12 ? "PM" : "AM"}`,
-    };
-
-    const indexDate: number = currentDays.findIndex((x) => x === day);
-    const editNote: Array<currentDayInterface> = currentDays.map(
-      (date, index) => ({
-        ...date,
-        notes:
-          index === indexDate
-            ? [...date.notes.filter((n) => n.id !== note.id && note), payload]
-            : date.notes,
-      }),
-    );
-
-    setLocalStorage("data_notes", JSON.stringify(editNote));
-    mappingData();
-    setIsModal(false);
-  };
-
-  const handleDeleteEvent = ({
-    day,
-    note,
-  }: {
-    day: currentDayInterface;
-    note: notesInterface;
-  }) => {
-    const indexDate: number = currentDays.findIndex((x) => x === day);
-    const removeNote: Array<currentDayInterface> = currentDays.map(
-      (date, index) => ({
-        ...date,
-        notes:
-          index === indexDate
-            ? date.notes.filter((n) => n.id !== note.id && note)
-            : date.notes,
-      }),
-    );
-
-    setLocalStorage("data_notes", JSON.stringify(removeNote));
-    mappingData();
-    setIsModal(false);
+    setTypeModal(typeModal);
   };
 
   const handleChangeInput = (e: ChangeEvent) => {
@@ -207,13 +110,66 @@ function MappingDays({ day }: { day: Date }) {
     e.preventDefault();
 
     if (dataOnEdit) {
+      const [h, m] = dataOnEdit.note.time.split(":");
+      const hour: number = parseInt(h);
+
+      const payload: notesInterface = {
+        id:
+          typeModal === "edit"
+            ? dataOnEdit.note.id
+            : parseInt(
+                `${new Date().getSeconds()}${Math.floor(
+                  Math.random() * 16777215,
+                )}`,
+              ),
+        name: dataOnEdit.note.name,
+        email: dataOnEdit.note.email,
+        color: typeModal === "edit" ? dataOnEdit.note.color : randomColor(),
+        time: `${
+          hour % 12
+            ? `${(hour % 12).toString().length === 1 ? 0 : ""}${hour % 12}`
+            : 12
+        } : ${m}  ${hour >= 12 ? "PM" : "AM"}`,
+      };
+
+      const indexDate: number = currentDays.findIndex(
+        (x) => x === dataOnEdit.day,
+      );
+      let data: Array<currentDayInterface> = [];
+
       if (typeModal === "add") {
-        handleAddEvent({ day: dataOnEdit.day, note: dataOnEdit.note });
+        data = currentDays.map((date, index) => ({
+          ...date,
+          notes: index === indexDate ? [...date.notes, payload] : date.notes,
+        }));
       } else if (typeModal === "edit") {
-        handleEditEvent({ day: dataOnEdit.day, note: dataOnEdit.note });
+        data = currentDays.map((date, index) => ({
+          ...date,
+          notes:
+            index === indexDate
+              ? [
+                  ...date.notes.filter(
+                    (n) => n.id !== dataOnEdit.note.id && dataOnEdit.note,
+                  ),
+                  payload,
+                ]
+              : date.notes,
+        }));
       } else if (typeModal === "delete") {
-        handleDeleteEvent({ day: dataOnEdit.day, note: dataOnEdit.note });
+        data = currentDays.map((date, index) => ({
+          ...date,
+          notes:
+            index === indexDate
+              ? date.notes.filter(
+                  (n) => n.id !== dataOnEdit.note.id && dataOnEdit.note,
+                )
+              : date.notes,
+        }));
       }
+
+      setLocalStorage("data_notes", JSON.stringify(data));
+      mappingData();
+      setIsModal(false);
     }
   };
 
@@ -223,38 +179,61 @@ function MappingDays({ day }: { day: Date }) {
         day.currentMonth ? (
           <div
             key={index}
-            className={`relative z-0 min-h-[80px] w-[calc(100%/7)] border border-neutral-400 p-1 hover:bg-neutral-300 
+            className={`_day relative z-0 min-h-[80px] w-[calc(100%/7)] border border-neutral-400 p-1 hover:bg-neutral-400 
             ${day.currentMonth ? "current" : ""}
             ${day.selected ? "selected" : ""}`}
-            onClick={() => (day.notes.length ? null : addEvent({ day: day }))}
+            onClick={() =>
+              day.notes.length
+                ? null
+                : handleOpenModal({
+                    day,
+                    note: { id: 0, name: "", email: "", color: "", time: "" },
+                    typeModal: "add",
+                  })
+            }
           >
             <p className="_date text-neutral-400">{day.number}</p>
             <div className="relative z-50 mt-2 flex flex-col gap-1">
               {day.notes.map((n) => (
                 <div className="_note relative z-20" key={n.id}>
                   <div
-                    className="p-1 text-sm text-white"
+                    className="flex flex-col gap-2 overflow-hidden break-words p-1 text-sm text-white"
                     style={{ backgroundColor: `#${n.color}` }}
                   >
-                    <p>{n.name}</p>
+                    <p className="font-semibold">{n.name}</p>
                     <p>{n.email}</p>
                     <p>{n.time}</p>
                   </div>
 
-                  <div className="_btn-action invisible absolute right-0 top-0 flex items-center gap-2 bg-neutral-400 p-1 text-sm text-white">
+                  <div className="_btn-action invisible absolute right-0 top-0 flex items-center gap-2 bg-neutral-500 p-1 text-sm text-white">
                     <i
                       className="fa fa-trash cursor-pointer"
-                      onClick={() => deleteEvent({ day: day, note: n })}
+                      onClick={() =>
+                        handleOpenModal({ day, note: n, typeModal: "delete" })
+                      }
                     />
                     <i
                       className="fa fa-pencil cursor-pointer"
-                      onClick={() => editEvent({ day: day, note: n })}
+                      onClick={() =>
+                        handleOpenModal({ day, note: n, typeModal: "edit" })
+                      }
                     />
                   </div>
                 </div>
               ))}
               {day.notes.length && day.notes.length < 3 ? (
-                <div onClick={() => addEvent({ day: day })}>Add</div>
+                <button
+                  className="_btn-add hidden w-full rounded-[6px] border border-neutral-500 bg-white px-3 py-1 text-center text-xs font-semibold text-neutral-700"
+                  onClick={() =>
+                    handleOpenModal({
+                      day,
+                      note: { id: 0, name: "", email: "", color: "", time: "" },
+                      typeModal: "add",
+                    })
+                  }
+                >
+                  Add
+                </button>
               ) : null}
             </div>
           </div>
@@ -312,8 +291,12 @@ function MappingDays({ day }: { day: Date }) {
           )}
 
           <div className="flex justify-end gap-4">
-            <button onClick={() => setIsModal(false)}>Cancel</button>
-            <button type="submit">
+            <button
+              type="submit"
+              className={`flex w-1/2 items-center justify-center rounded-[6px] px-3 py-2 text-xs font-semibold text-white md:text-sm ${
+                typeModal === "delete" ? "bg-red-700" : "bg-indigo-900"
+              }`}
+            >
               {typeModal === "delete" ? "Delete" : "Save"}
             </button>
           </div>

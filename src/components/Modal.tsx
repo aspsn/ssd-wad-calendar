@@ -37,7 +37,7 @@ function Modal({
 
   return (
     <div className={`modal-custom ${isShow ? "show" : ""} `}>
-      <div className="container-wrapper mt-[20%] flex h-full justify-center">
+      <div className="container-wrapper flex h-full items-center justify-center">
         <div
           className={`modal-custom-body ${
             size === "sm"
@@ -68,12 +68,7 @@ function Modal({
                 handleCloseModal();
               }}
             >
-              {/* <img
-                src="/images/icon/ic-close.svg"
-                alt="icon"
-                className="w-full"
-              /> */}
-              <i className="fa fa-close text-sm text-black" />
+              <img src="/ic-close.svg" alt="icon" className="w-full" />
             </button>
           </div>
           {isShow && children}
