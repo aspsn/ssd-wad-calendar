@@ -31,7 +31,7 @@ function MappingDays({ day }: { day: Date }) {
     let weekdayOfFirstDay: number = firstDayOfMonth.getDay();
     let tempCurrentDays: Array<currentDayInterface> = [];
     const dataLocal: string | null = getLocalStorage("data_notes");
-    const dataNotes: Array<currentDayInterface> | [] = dataLocal
+    const dataNotes: Array<notesInterface> | [] = dataLocal
       ? JSON.parse(dataLocal)
       : [];
 
@@ -47,16 +47,24 @@ function MappingDays({ day }: { day: Date }) {
       }
 
       let calendarDay: currentDayInterface = {
+        id: parseInt(
+          `${firstDayOfMonth.getDate()}${firstDayOfMonth.getMonth()}`,
+        ),
         currentMonth: firstDayOfMonth.getMonth() === day.getMonth(),
         date: new Date(firstDayOfMonth),
         month: firstDayOfMonth.getMonth(),
         number: firstDayOfMonth.getDate(),
         selected: firstDayOfMonth.toDateString() === day.toDateString(),
         year: firstDayOfMonth.getFullYear(),
-        notes:
-          dataNotes.length && dataNotes[i].notes.length
-            ? dataNotes[i].notes
-            : [],
+        notes: dataNotes.length
+          ? dataNotes.filter(
+              (n) =>
+                n.id_day ===
+                parseInt(
+                  `${firstDayOfMonth.getDate()}${firstDayOfMonth.getMonth()}`,
+                ),
+            )
+          : [],
       };
 
       tempCurrentDays.push(calendarDay);
@@ -112,6 +120,10 @@ function MappingDays({ day }: { day: Date }) {
     if (dataOnEdit) {
       const [h, m] = dataOnEdit.note.time.split(":");
       const hour: number = parseInt(h);
+      const dataLocal: string | null = getLocalStorage("data_notes");
+      const dataNotes: Array<notesInterface> | [] = dataLocal
+        ? JSON.parse(dataLocal)
+        : [];
 
       const payload: notesInterface = {
         id:
@@ -120,8 +132,9 @@ function MappingDays({ day }: { day: Date }) {
             : parseInt(
                 `${new Date().getSeconds()}${Math.floor(
                   Math.random() * 16777215,
-                )}`,
+                )}${dataOnEdit.day.id}`,
               ),
+        id_day: dataOnEdit.day.id,
         name: dataOnEdit.note.name,
         email: dataOnEdit.note.email,
         color: typeModal === "edit" ? dataOnEdit.note.color : randomColor(),
@@ -132,39 +145,21 @@ function MappingDays({ day }: { day: Date }) {
         } : ${m}  ${hour >= 12 ? "PM" : "AM"}`,
       };
 
-      const indexDate: number = currentDays.findIndex(
-        (x) => x === dataOnEdit.day,
-      );
-      let data: Array<currentDayInterface> = [];
+      let data: Array<notesInterface> = [...dataNotes];
 
       if (typeModal === "add") {
-        data = currentDays.map((date, index) => ({
-          ...date,
-          notes: index === indexDate ? [...date.notes, payload] : date.notes,
-        }));
+        data.push(payload);
       } else if (typeModal === "edit") {
-        data = currentDays.map((date, index) => ({
-          ...date,
-          notes:
-            index === indexDate
-              ? [
-                  ...date.notes.filter(
-                    (n) => n.id !== dataOnEdit.note.id && dataOnEdit.note,
-                  ),
-                  payload,
-                ]
-              : date.notes,
-        }));
+        data = data.map((n) =>
+          n.id === dataOnEdit.note.id
+            ? {
+                ...n,
+                ...payload,
+              }
+            : n,
+        );
       } else if (typeModal === "delete") {
-        data = currentDays.map((date, index) => ({
-          ...date,
-          notes:
-            index === indexDate
-              ? date.notes.filter(
-                  (n) => n.id !== dataOnEdit.note.id && dataOnEdit.note,
-                )
-              : date.notes,
-        }));
+        data = data.filter((n) => n.id !== dataOnEdit.note.id);
       }
 
       setLocalStorage("data_notes", JSON.stringify(data));
@@ -187,7 +182,14 @@ function MappingDays({ day }: { day: Date }) {
                 ? null
                 : handleOpenModal({
                     day,
-                    note: { id: 0, name: "", email: "", color: "", time: "" },
+                    note: {
+                      id: 0,
+                      id_day: 0,
+                      name: "",
+                      email: "",
+                      color: "",
+                      time: "",
+                    },
                     typeModal: "add",
                   })
             }
@@ -227,7 +229,14 @@ function MappingDays({ day }: { day: Date }) {
                   onClick={() =>
                     handleOpenModal({
                       day,
-                      note: { id: 0, name: "", email: "", color: "", time: "" },
+                      note: {
+                        id: 0,
+                        id_day: 0,
+                        name: "",
+                        email: "",
+                        color: "",
+                        time: "",
+                      },
                       typeModal: "add",
                     })
                   }

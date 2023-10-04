@@ -1,4 +1,5 @@
 interface currentDayInterface {
+  id: number;
   currentMonth: boolean;
   date: Date;
   month: number;
@@ -10,6 +11,7 @@ interface currentDayInterface {
 
 interface notesInterface {
   id: number;
+  id_day: number;
   name: string;
   email: string;
   time: string;
